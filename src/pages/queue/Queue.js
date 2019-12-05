@@ -16,7 +16,7 @@ class Queue extends Component {
     firebase.firestore().collection('queues').doc(this.props.match.params.queueId).onSnapshot((doc) => {
       if (doc.exists) {
         this.setState({
-          ...doc.data(),
+          ...Object.assign(doc.data(), { startTime: doc.data().startTime.seconds })
         });
       }
     });
@@ -27,9 +27,14 @@ class Queue extends Component {
   }
 
   render() {
+    const { name, users, startTime, maxTimespan, actionUserNumber } = this.state;
     return (
       <div>
-        <h1>{this.state.name}</h1>
+        <h1>{name}</h1>
+        <span>users: {users}</span>
+        <span>startTime: {startTime}</span>
+        <span>maxTimespan: {maxTimespan}</span>
+        <span>actionUserNumber: {actionUserNumber}</span>
         <Button variant="contained" color="primary" onClick={this.handleJoinQueue}>
           Join Queue
         </Button>
