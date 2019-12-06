@@ -1,25 +1,18 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import Button from '@material-ui/core/Button';
-import firebase from '../../util/firebase';
+import getQueueData from '../../redux/actions/Queue';
 
 class Queue extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-
-    };
     this.handleJoinQueue = this.handleJoinQueue.bind(this);
   }
   componentDidMount() {
-    firebase.firestore().collection('queues').doc(this.props.match.params.queueId).onSnapshot((doc) => {
-      if (doc.exists) {
-        this.setState({
-          ...Object.assign(doc.data(), { startTime: doc.data().startTime.seconds })
-        });
-      }
-    });
+    // this.props.getQueueData();
   }
   handleJoinQueue() {
     // TODO: handle add use in collection
@@ -27,20 +20,62 @@ class Queue extends Component {
   }
 
   render() {
-    const { name, users, startTime, maxTimespan, actionUserNumber } = this.state;
+    const { queueData, isLoading, queueDataError } = this.props;
+    const timeNow = new Date();
+    if (isLoading) {
+      return <span>Loading...</span>;
+    } else if (queueDataError) {
+      return <span>error getting queue data</span>;
+    }
+
     return (
       <div>
-        <h1>{name}</h1>
-        <span>users: {users}</span>
-        <span>startTime: {startTime}</span>
-        <span>maxTimespan: {maxTimespan}</span>
-        <span>actionUserNumber: {actionUserNumber}</span>
-        <Button variant="contained" color="primary" onClick={this.handleJoinQueue}>
+        <h1>{queueData.name}</h1>
+        <span>users: {queueData.users}</span>
+        <span>startTime: {queueData.startTime}</span>
+        <span>maxTimespan: {queueData.maxTimespan}</span>
+        <span>actionUserNumber: {queueData.actionUserNumber}</span>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={this.handleJoinQueue}
+          disabled={queueData.startTime && new Date(queueData.startTime) > timeNow}
+        >
           Join Queue
         </Button>
       </div>
     )
   }
+};
+
+Queue.propTypes = {
+  match: PropTypes.shape({
+    params: PropTypes.shape({
+      queueId: PropTypes.string,
+    }),
+  }).isRequired,
+  // from mapStateToProps
+  queueData: PropTypes.object.isRequired,
+  isLoading: PropTypes.bool.isRequired,
+  queueDataError: PropTypes.string,
+};
+
+Queue.defaultProps = {
+  queueDataError: '',
+};
+
+const mapStateToProps = state => {
+  return {
+    queueData: state.queueReducer.queueData,
+    isLoading: state.queueReducer.isQueueDataLoading,
+    queueDataError: state.queueReducer.queueDataError,
+  };
 }
 
-export default withRouter(Queue);
+const mapDispatchToProps = (dispatch, ownProps) => {
+  return {
+    getQueueData: dispatch(getQueueData(ownProps.match.params.queueId)),
+  }
+};
+
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(Queue));

@@ -1,0 +1,5 @@
+export const BASE_TYPES = {
+  LOADING: 'LOADING',
+  SUCCESS: 'SUCCESS',
+  ERROR: 'ERROR',
+};
