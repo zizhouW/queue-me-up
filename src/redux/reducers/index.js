@@ -1,9 +1,10 @@
 import { combineReducers } from 'redux';
-import { queueReducer } from './QueueReducers';
+import { getQueueReducer, joinQueueReducer } from './QueueReducers';
 // import recommendationsReducer from '../features/recommendations/reducers';
 
 const rootReducer = combineReducers({
-  queueReducer,
+  getQueueReducer,
+  joinQueueReducer,
 });
 
 export default rootReducer;

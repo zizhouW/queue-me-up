@@ -22,6 +22,27 @@ const getQueueDataError = (payload) => {
   }
 };
 
+const joinQueueLoading = (payload) => {
+  return {
+    type: types.JOIN_QUEUE_LOADING,
+    payload
+  }
+};
+
+const joinQueueSuccess = (payload) => {
+  return {
+    type: types.JOIN_QUEUE_SUCCESS,
+    payload
+  }
+};
+
+const joinQueueError = (payload) => {
+  return {
+    type: types.JOIN_QUEUE_ERROR,
+    payload
+  }
+};
+
 const getQueueData = (queueId) => (dispatch) => {
   if (!queueId) return;
 
@@ -30,9 +51,19 @@ const getQueueData = (queueId) => (dispatch) => {
   firebase.firestore().collection('queues').doc(queueId).onSnapshot((doc) => {
     if (doc.exists) {
       isLoading = false;
+      let queueIndex = 0;
       dispatch(getQueueDataLoading(isLoading));
       dispatch(getQueueDataSuccess(Object.assign(doc.data(),
-        { startTime: doc.data().startTime.seconds })));
+        {
+          startTime: new Date(doc.data().startTime.seconds * 1000),
+          users: doc.data().users.map(userName => {
+            return {
+              order: ++queueIndex,
+              name: userName,
+            };
+          }),
+        })
+      ));
     }
   }, error => {
     isLoading = false;
@@ -41,4 +72,22 @@ const getQueueData = (queueId) => (dispatch) => {
   });
 };
 
-export default getQueueData;
+const joinQueue = (queueId, userName) => (dispatch) => {
+  if (!userName) return;
+
+  let isLoading = true;
+  dispatch(joinQueueLoading(isLoading));
+  firebase.firestore().collection('queues').doc(queueId).update({
+    users: firebase.firestore.FieldValue.arrayUnion(userName),
+  }).then(response => {
+    isLoading = false;
+    dispatch(joinQueueLoading(isLoading));
+    if (!response) {
+      dispatch(joinQueueSuccess({ message: 'Joined successfully.'}));
+    } else {
+      dispatch(joinQueueError('Something went wrong.'));
+    }
+  });
+};
+
+export { getQueueData, joinQueue };
