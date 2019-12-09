@@ -55,7 +55,7 @@ class Queue extends Component {
     if (isLoading) {
       return <span>Loading...</span>;
     } else if (queueDataError) {
-      return <span>error getting queue data</span>;
+      return <span>{queueDataError}</span>;
     }
 
     let usersInAction = [];
