@@ -43,6 +43,27 @@ const joinQueueError = (payload) => {
   }
 };
 
+const leaveQueueLoading = (payload) => {
+  return {
+    type: types.LEAVE_QUEUE_LOADING,
+    payload
+  }
+};
+
+const leaveQueueSuccess = (payload) => {
+  return {
+    type: types.LEAVE_QUEUE_SUCCESS,
+    payload
+  }
+};
+
+const leaveQueueError = (payload) => {
+  return {
+    type: types.LEAVE_QUEUE_ERROR,
+    payload
+  }
+};
+
 const getQueueData = (queueId) => (dispatch) => {
   if (!queueId) return;
 
@@ -83,11 +104,30 @@ const joinQueue = (queueId, userName) => (dispatch) => {
     isLoading = false;
     dispatch(joinQueueLoading(isLoading));
     if (!response) {
-      dispatch(joinQueueSuccess({ message: 'Joined successfully.'}));
+      dispatch(joinQueueSuccess({ currentUser: userName }));
     } else {
       dispatch(joinQueueError('Something went wrong.'));
     }
   });
 };
 
-export { getQueueData, joinQueue };
+const leaveQueue = (queueId, userName) => (dispatch) => {
+  if (!userName) return;
+
+  let isLoading = true;
+  dispatch(leaveQueueLoading(isLoading));
+  firebase.firestore().collection('queues').doc(queueId).update({
+    users: firebase.firestore.FieldValue.arrayRemove(userName),
+  }).then(response => {
+    isLoading = false;
+    dispatch(leaveQueueLoading(isLoading));
+    if (!response) {
+      dispatch(joinQueueSuccess({ currentUser: null }));
+      dispatch(leaveQueueSuccess({ message: 'Leaved successfully.'}));
+    } else {
+      dispatch(leaveQueueError('Something went wrong.'));
+    }
+  });
+};
+
+export { getQueueData, joinQueue, leaveQueue };

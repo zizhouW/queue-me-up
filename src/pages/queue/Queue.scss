@@ -39,6 +39,10 @@
         border: 2px dashed darkblue; 
         border-radius: 12px;
       }
+
+      &-placeholder {
+        color: grey;
+      }
     }
 
     .queue-list-users {
@@ -67,13 +71,24 @@
       }
     }
 
-    .join-queue-form {
+    .queue-joined-as {
+      width: $horizontal-align-width;
+      margin: auto;
+      font-weight: bold;
+
+      &__name {
+        font-size: 18px;
+        color: #3f51b5;
+      }
+    }
+
+    .queue-action-form {
       display: flex;
-      justify-content: center;
-      text-align: center;
+      margin: auto;
+      width: $horizontal-align-width;
 
       > div {
-        width: $horizontal-align-width;
+        width: 100%;
       }
 
       &__username-input {

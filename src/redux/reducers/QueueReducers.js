@@ -12,6 +12,12 @@ const joinQueueState = {
   joinQueueError: null,
 };
 
+const leaveQueueState = {
+  leaveQueueResponse: {},
+  isLeaveQueueLoading: false,
+  leaveQueueError: null,
+};
+
 export const getQueueReducer = (state = getQueueState, action) => {
   switch(action.type) {
     case types.QUEUE_DATA_LOADING:
@@ -38,3 +44,16 @@ export const joinQueueReducer = (state = joinQueueState, action) => {
   }
 }
 
+
+export const leaveQueueReducer = (state = leaveQueueState, action) => {
+  switch(action.type) {
+    case types.LEAVE_QUEUE_LOADING:
+      return { ...state, isLeaveQueueLoading: action.payload, leaveQueueError: null };
+    case types.LEAVE_QUEUE_SUCCESS:
+      return { ...state, isLeaveQueueLoading: false, leaveQueueResponse: action.payload };
+    case types.LEAVE_QUEUE_ERROR:
+      return { ...state, isLeaveQueueLoading: false, leaveQueueError: action.payload };
+    default:
+      return state;
+  }
+}

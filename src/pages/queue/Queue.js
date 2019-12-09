@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { FormControl, InputLabel, Input, Button } from '@material-ui/core';
-import { getQueueData, joinQueue } from '../../redux/actions/Queue';
+import { getQueueData, joinQueue, leaveQueue } from '../../redux/actions/Queue';
 import './Queue.scss';
 
 class Queue extends Component {
@@ -15,12 +15,28 @@ class Queue extends Component {
     };
 
     this.handleJoinQueue = this.handleJoinQueue.bind(this);
+    this.handleLeaveQueue = this.handleLeaveQueue.bind(this);
     this.handleUsernameChange = this.handleUsernameChange.bind(this);
+  }
+
+  componentWillUnmount() {
+    if (this.props.joinQueueResponse.currentUser) {
+      this.props.onLeaveQueue(this.props.joinQueueResponse.currentUser);
+    }
   }
 
   handleJoinQueue() {
     if (this.state.userName) {
       this.props.onJoinQueue(this.state.userName);
+    }
+  }
+
+  handleLeaveQueue() {
+    this.setState({
+      userName: '',
+    });
+    if (this.props.joinQueueResponse.currentUser) {
+      this.props.onLeaveQueue(this.props.joinQueueResponse.currentUser);
     }
   }
 
@@ -33,8 +49,8 @@ class Queue extends Component {
   }
 
   render() {
-    const { queueData, isLoading, queueDataError,
-      isJoinQueueLoading, joinQueueError } = this.props;
+    const { queueData, isLoading, queueDataError, joinQueueResponse, isJoinQueueLoading,
+      joinQueueError, isLeaveQueueLoading, leaveQueueError } = this.props;
     const timeNow = new Date();
     if (isLoading) {
       return <span>Loading...</span>;
@@ -68,44 +84,64 @@ class Queue extends Component {
         <div className="queue-main-content">
           <div className="action-list-users">
             <div className="action-list-users__title">Users in action (limit {queueData.actionUserNumber})</div>
-            {usersInAction.map(user => {
+            {usersInAction.length > 0 ? usersInAction.map(user => {
               return (
-                <div className="action-list-user">
+                <div className="action-list-user" key={user.name}>
                   <div className="action-list-user__name">{user.name}</div>
                 </div>
               );
-            })}
+            }) : <span className="action-list-users-placeholder">Nobody is in queue. Join now to be the first!</span>}
           </div>
-          <div className="queue-list-users">
+          {usersInQueue.length > 0 &&
+            <div className="queue-list-users">
             <div className="queue-list-users__title">Up next</div>
-            {usersInQueue.map(user => {
-              return (
-                <div className="queue-list-user">
-                  <div className="queue-list-user__order">{user.order}</div>
-                  <div className="queue-list-user__name">{user.name}</div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="join-queue-form">
-            <FormControl>
-            <InputLabel htmlFor="input-name">Enter name</InputLabel>
-            <Input
-              id="input-name"
-              className="join-queue-form__username-input"
-              value={this.state.userName}
-              onChange={this.handleUsernameChange}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              className="join-queue-form__button"
-              onClick={this.handleJoinQueue}
-              disabled={queueData.startTime && new Date(queueData.startTime) > timeNow || isJoinQueueLoading}
-            >
-              Join Queue
-            </Button>
-            </FormControl>
+              {usersInQueue.map(user => {
+                return (
+                  <div className="queue-list-user" key={user.name}>
+                    <div className="queue-list-user__order">{user.order}</div>
+                    <div className="queue-list-user__name">{user.name}</div>
+                  </div>
+                );
+              })}
+            </div>
+          }
+          {joinQueueResponse.currentUser &&
+            <div className="queue-joined-as">
+              You are in queue as:
+              <span className="queue-joined-as__name"> {joinQueueResponse.currentUser}</span>
+            </div>
+          }
+          <div className="queue-action-form">
+            {joinQueueResponse.currentUser ? (
+              <Button
+                variant="contained"
+                color="secondary"
+                className="queue-action-form__button"
+                onClick={this.handleLeaveQueue}
+                disabled={isLeaveQueueLoading}
+              >
+                Leave Queue
+              </Button>
+            ) : (
+              <FormControl>
+                <InputLabel htmlFor="input-name">Enter name</InputLabel>
+                <Input
+                  id="input-name"
+                  className="queue-action__username-input"
+                  value={this.state.userName}
+                  onChange={this.handleUsernameChange}
+                />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  className="queue-action-form__button"
+                  onClick={this.handleJoinQueue}
+                  disabled={queueData.startTime && new Date(queueData.startTime) > timeNow || isJoinQueueLoading}
+                >
+                  Join Queue
+                </Button>
+              </FormControl>
+            )}
           </div>
         </div>
       );
@@ -134,15 +170,18 @@ Queue.propTypes = {
   joinQueueResponse: PropTypes.object.isRequired,
   isJoinQueueLoading: PropTypes.bool.isRequired,
   joinQueueError: PropTypes.string,
+  leaveQueueResponse: PropTypes.object.isRequired,
+  isLeaveQueueLoading: PropTypes.bool.isRequired,
+  leaveQueueError: PropTypes.string,
 };
 
 Queue.defaultProps = {
   queueDataError: '',
   joinQueueError: '',
+  leaveQueueError: '',
 };
 
 const mapStateToProps = state => {
-  let queueIndex = 1;
   return {
     queueData: state.getQueueReducer.queueData,
     isLoading: state.getQueueReducer.isQueueDataLoading,
@@ -150,6 +189,9 @@ const mapStateToProps = state => {
     joinQueueResponse: state.joinQueueReducer.joinQueueResponse,
     isJoinQueueLoading: state.joinQueueReducer.isJoinQueueLoading,
     joinQueueError: state.joinQueueReducer.joinQueueError,
+    leaveQueueResponse: state.leaveQueueReducer.leaveQueueResponse,
+    isLeaveQueueLoading: state.leaveQueueReducer.isLeaveQueueLoading,
+    leaveQueueError: state.leaveQueueReducer.leaveQueueError,
   };
 }
 
@@ -158,6 +200,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     getQueueData: dispatch(getQueueData(ownProps.match.params.queueId)),
     onJoinQueue: (name => {
       dispatch(joinQueue(ownProps.match.params.queueId, name));
+    }),
+    onLeaveQueue: (name => {
+      dispatch(leaveQueue(ownProps.match.params.queueId, name));
     }),
   }
 };
